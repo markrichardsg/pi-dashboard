@@ -11,10 +11,15 @@ Parameters:
     Type: String
 Resources:
 
-  SecurityGroup:
+  ServiceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Service description
+      GroupDescription: Service
+      VpcId: !Ref VPC
+  LoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Load Balancer
       VpcId: !Ref VPC
   ExecutionRole:
     Type: AWS::IAM::Role
@@ -91,7 +96,7 @@ Resources:
     Type: AWS::ECS::Service
     DependsOn:
      - TaskDefinition
-     - SecurityGroup
+     - ServiceSecurityGroup
     Properties:
       Cluster: !Ref ClusterName
       DesiredCount: 1
@@ -101,6 +106,17 @@ Resources:
         AwsvpcConfiguration:
           AssignPublicIp: DISABLED
           SecurityGroups:
-            - !Ref SecurityGroup
+            - !Ref ServiceSecurityGroup
           Subnets:
             - !Ref Subnet
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    DependsOn: LoadBalancerSecurityGroup
+    Properties:
+      Scheme: internal
+      SecurityGroups:
+        - LoadBalancerSecurityGroup
+      Subnets:
+        - !Ref Subnet
+      Type: String
+

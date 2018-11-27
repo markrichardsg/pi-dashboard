@@ -1,0 +1,106 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Service
+Parameters:
+  VPC:
+    Type: String
+  ECR:
+    Type: String
+  ClusterName:
+    Type: String
+  Subnet:
+    Type: String
+Resources:
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Service description
+      VpcId: !Ref VPC
+  ExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: WriteRole
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                - ecr:GetAuthorizationToken
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+
+                Resource: "*"
+              - Effect: Allow
+                Action: ecr:*
+                Resource: !Sub arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${ECR}
+
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: WriteRole
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: ecr:GetAuthorizationToken
+                Resource: "*"
+              - Effect: Allow
+                Action: ecr:*
+                Resource: !Sub arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${ECR}
+
+
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    DependsOn:
+      - TaskRole
+      - ExecutionRole
+    Properties:
+      Cpu: 256
+      Memory: 1GB
+      TaskRoleArn: !Ref TaskRole
+      ExecutionRoleArn: !Ref ExecutionRole
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+      - FARGATE
+      ContainerDefinitions:
+        - Image: ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECR}:latest
+          MemoryReservation: 256
+          Name: Grafana
+          PortMappings:
+            - ContainerPort: 3000
+
+  Service:
+    Type: AWS::ECS::Service
+    DependsOn:
+     - TaskDefinition
+     - SecurityGroup
+    Properties:
+      Cluster: !Ref ClusterName
+      DesiredCount: 1
+      LaunchType: FARGATE
+      TaskDefinition: !Ref TaskDefinition
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - !Ref SecurityGroup
+          Subnets:
+            - !Ref Subnet

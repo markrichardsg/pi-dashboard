@@ -1,0 +1,28 @@
+---
+- name: Required apt packages
+  apt:
+    name:
+      - curl
+      - python-setuptools
+      - python-pip
+    update_cache: yes
+    state: present
+    force: yes
+
+- name: Add docker install script
+  copy:
+    src: install-docker.sh
+    dest: /opt/install-docker/
+    mode: 0754
+
+- name: Install Docker
+  shell: cd /opt/install-docker && ./install-docker.sh
+  args:
+    executable: /bin/bash
+
+- name: Test docker
+  command: which docker
+
+- name: Docker compose
+  pip:
+    name: docker-compose

@@ -1,0 +1,21 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ECR
+
+Resources:
+
+  ECR:
+    Type: AWS::ECR::Repository
+
+  Group:
+    Type: AWS::IAM::Group
+    Properties:
+      Policies:
+        - PolicyName: WriteRole
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: ecr:GetAuthorizationToken
+                Resource: "*"
+              - Effect: Allow
+                Action: ecr:*
+                Resource: !Sub arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${ECR}

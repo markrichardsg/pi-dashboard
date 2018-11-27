@@ -1,0 +1,11 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: VPC
+
+Parameters:
+  ClusterName:
+    Type: String
+Resources:
+  VPC:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Ref ClusterName

@@ -86,7 +86,7 @@ Resources:
       RequiresCompatibilities:
       - FARGATE
       ContainerDefinitions:
-        - Image: ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECR}:latest
+        - Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECR}:latest
           MemoryReservation: 256
           Name: Grafana
           PortMappings:
@@ -114,9 +114,7 @@ Resources:
     DependsOn: LoadBalancerSecurityGroup
     Properties:
       Scheme: internal
-      SecurityGroups:
-        - LoadBalancerSecurityGroup
       Subnets:
         - !Ref Subnet
-      Type: String
+      Type: network
 
